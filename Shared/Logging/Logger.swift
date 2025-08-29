@@ -39,20 +39,23 @@ final class Debug {
 		return getDocumentsDirectory().appendingPathComponent("logs.txt")
 	}
 	
-	private func appendLogToFile(_ message: String) {
-		do {
-			if FileManager.default.fileExists(atPath: logFilePath.path) {
-				let fileHandle = try FileHandle(forUpdating: logFilePath)
-				fileHandle.seekToEndOfFile()
-				if let data = message.data(using: .utf8) {
-					fileHandle.write(data)
-				}
-				fileHandle.closeFile()
-			}
-		} catch {
-			Debug.shared.log(message: "Error writing to logs.txt: \(error)")
-		}
-	}
+        private func appendLogToFile(_ message: String) {
+                do {
+                        if !FileManager.default.fileExists(atPath: logFilePath.path) {
+                                FileManager.default.createFile(atPath: logFilePath.path, contents: nil, attributes: nil)
+                        }
+
+                        let fileHandle = try FileHandle(forWritingTo: logFilePath)
+                        fileHandle.seekToEndOfFile()
+                        if let data = message.data(using: .utf8) {
+                                fileHandle.write(data)
+                        }
+                        try fileHandle.close()
+                } catch {
+                        // Avoid recursion by printing instead of logging through Debug
+                        print("Error writing to logs.txt: \(error)")
+                }
+        }
 	
 	func log(message: String, type: LogType? = nil, function: String = #function, file: String = #file, line: Int = #line) {
 		lazy var logger = Logger(subsystem: subsystem, category: file + "->" + function)
